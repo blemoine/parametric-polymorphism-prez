@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <title>Parametric Polymorphism</title>
+
+    <link rel="stylesheet" href="dist/reset.css" />
+    <link rel="stylesheet" href="dist/reveal.css" />
+    <link rel="stylesheet" href="dist/theme/white.css" />
+
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="plugin/highlight/monokai.css" />
+
+    <style>
+      code {
+        border: 1px solid #333;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1>Parametric Polymorphism</h1>
+          <h2 class="fragment">
+            Building up intuition about function signatures
+          </h2>
+        </section>
+
+        <section>
+          <h2>Hypothesis</h2>
+          <ul>
+            <li><code>strict:true</code></li>
+            <li>no <code>any</code></li>
+            <li>no cast (<code>value as XXX</code>, or <code> &lt;XX>value</code>)</li>
+            <li>
+              no hidden side effects (no <code>Math.random</code>,
+              <code>Date.now</code>, etc.)
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What are types?</h2>
+          <ul>
+            <li>
+              Set of possible values <code>boolean</code>, <code>number</code>,
+              etc.
+            </li>
+            <li>Contraints on usable operations</li>
+          </ul>
+          <pre><code data-trim class="typescript">
+class User {
+  constructor(public first_name: string,
+              public last_name: string ) {}
+    getName():string {
+      return this.first_name + ' ' + this.last_name
+    }
+  }
+}
+
+function japaneseStyleName(user:User): string {
+  return user.last_name + ' ' + user.first_name
+}
+			  </code></pre>
+        </section>
+
+        <section>
+          <h2>
+            What are <em>generics</em> <br />(aka.
+            <em>parametric polymorphism</em>)
+          </h2>
+
+          <ul>
+            <li class="fragment">
+              on Data, <code>Array&lt;A></code>, <code>Promise&lt;A></code>
+            </li>
+            <li class="fragment">
+              on functions,<br />
+              <code style="font-size: 90%"
+                >let f = &lt;A,B>(a:A, b:B):[A,B] => [a,b]</code
+              >
+            </li>
+          </ul>
+
+          <p class="fragment">we'll focus on the last one today</p>
+        </section>
+
+        <section>
+          <h2>The <em>caller</em> decides what will be the type</h2>
+          <pre><code data-trim class="typescript">
+const f = &lt;A, B>(a: A, b: B): (A | B)[] => [b,a];
+
+const r1 = f&lt;1,'a'>(1, 'a') //  (1 | 'a')[]
+const r2 = f(1, 'a') //  (number | string)[]
+const r3 = f&lt;unknown, unknown>(1, 'a') // unknown[]
+          </code></pre>
+        </section>
+
+        <section>
+          <h2>Domain And Codomain</h2>
+          <pre><code data-trim class="typescript">
+function f(str: string): number {
+    if(str === 'a' || str === 'b') {
+       return 1;
+    } else if(str === 'c') {
+       return 5;
+    } else {
+       throw new Error(`Unsupported ${str}`);
+    }
+}
+                </code></pre>
+          <ul>
+            <li class="fragment">Domain is <code>{'a', 'b', 'c'}</code></li>
+            <li class="fragment">Codomain is <code>{1, 5}</code></li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+(n:number) => number
+			  </code></pre>
+
+          <p class="fragment">Not much... Could be anything</p>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+&lt;A>(a:A) => number
+			  </code></pre>
+          <p class="fragment">
+            The result is a fixed number. <br />Whatever the input, this
+            function will always return the same number
+          </p>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+&lt;A>(a:A) => A
+			  </code></pre>
+          <p class="fragment">The codomain <em>is</em> { a }</p>
+          <pre class="fragment"><code data-trim class="typescript">
+// only possible implementation is
+const id = &lt;A>(a:A) => A = a
+            </code></pre>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+&lt;A>(a:A) => A[]
+			  </code></pre>
+          <p class="fragment">it can be {[]}, {[a]}, or {[a,a,a,a]}, etc.</p>
+          <p class="fragment">the length of the array is constant</p>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+&lt;A, B>(a:A) => B
+			  </code></pre>
+          <p class="fragment">
+            There is no side-effect free implementation possible
+            <code class="fragment">throw new Error()</code>
+          </p>
+        </section>
+
+        <section>
+          <h2>What can you say about the Codomain?</h2>
+          <pre><code data-trim class="typescript">
+&lt;A, B>(a:A) => B[]
+			  </code></pre>
+          <p class="fragment">{[]}</p>
+          <pre class="fragment"><code data-trim class="typescript">
+// only possible implementation is
+const empty_arr = &lt;A, B>(a:A) => B[] = []
+            </code></pre>
+        </section>
+
+        <section>
+          <ul>
+            <li>To use a generic as a return type...</li>
+            <li>
+              ... we must have something generating this generic in the inputs
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>What can you say about?</h2>
+          <pre><code data-trim class="typescript">
+		&lt;R>(url: string) => R
+			</code></pre>
+          <ul>
+            <li>axios and fetch are typed like that!</li>
+            <li class="fragment">Not possible...</li>
+            <li class="fragment">
+              ... without doing something bad <br />(hidden
+              <code>any</code>!).
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Conclusion</h2>
+
+          <ul>
+            <li>
+              Less is more: if you can do less things with your inputs, your
+              function will be more easily re-used
+            </li>
+            <li>
+              Being side-effect free helps understand what a function do by
+              reading only the signature
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Side notes</h2>
+          <li>
+            Going further: bounded polymorphism <br />(<code
+              >&lt;A extends Something></code
+            >) and variance <br />(<code>&lt;out A></code>,
+            <code>&lt;in A></code>)
+          </li>
+          <li>
+            Some languages - Idris, Agda, Coq, etc. - can generate code from the
+            signature when types are precise enough
+          </li>
+        </section>
+
+        <section>
+          <h2>Questions?</h2>
+        </section>
+      </div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+        hash: true,
+
+        // Learn about plugins: https://revealjs.com/plugins/
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+      });
+    </script>
+  </body>
+</html>
